@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import BookingItem from './BookingItem'
 
@@ -70,6 +70,10 @@ function App() {
         }
     }, [])
 
+    // Store idempotency keys for each booking ID
+    const idempotencyKeys = useRef(new Map());
+    const errorTimeoutRef = useRef(null);
+
     // Simple UUID v4 generator
     const generateUUID = () => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -88,17 +92,25 @@ function App() {
             b.id === id ? { ...b, availability: false } : b
         ));
 
-        const idempotencyKey = generateUUID();
+        // Get or generate idempotency key for this booking ID
+        let key = idempotencyKeys.current.get(id);
+        if (!key) {
+            key = generateUUID();
+            idempotencyKeys.current.set(id, key);
+        }
 
         // Make API call
-        fetch('http://localhost:3001/reserve', {
+        fetch(`http://localhost:3001/api/bookings/${id}/reserve`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                id,
-                idempotencyKey
+                id, // Keeping ID in body is redundant but harmless, but strictly we can remove it if backend ignores it.
+                // However, backend extraction changed to params.
+                // Let's send just the key as per new route requirements?
+                // The backend only extracts { idempotencyKey } from body.
+                idempotencyKey: key
             }),
         })
             .then(res => res.json())
@@ -113,10 +125,26 @@ function App() {
                 // Revert on network error or server failure
                 setBookings(previousBookings);
                 setBookingsError(`Failed to reserve: ${err.message}`);
-                // Clear error after 3 seconds
-                setTimeout(() => setBookingsError(null), 3000);
+
+                // Clear previous timeout if exists
+                if (errorTimeoutRef.current) {
+                    clearTimeout(errorTimeoutRef.current);
+                }
+                // Set new timeout
+                errorTimeoutRef.current = setTimeout(() => {
+                    setBookingsError(null);
+                    errorTimeoutRef.current = null;
+                }, 3000);
             });
     }
+
+    useEffect(() => {
+        return () => {
+            if (errorTimeoutRef.current) {
+                clearTimeout(errorTimeoutRef.current);
+            }
+        };
+    }, []);
 
     return (
         <div className="App">

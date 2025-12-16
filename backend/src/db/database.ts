@@ -1,11 +1,8 @@
 import Database from 'better-sqlite3';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { join } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const db = new Database(join(__dirname, 'bookings.db'));
+const dbPath = join(process.cwd(), 'bookings.db');
+const db = new Database(dbPath);
 
 // Create bookings table with idempotency_key column
 db.exec(`
@@ -18,13 +15,13 @@ db.exec(`
 `);
 
 // Check if we need to seed data
-const count = db.prepare('SELECT COUNT(*) as count FROM bookings').get();
+const count = db.prepare('SELECT COUNT(*) as count FROM bookings').get() as { count: number };
 
 if (count.count === 0) {
     // Seed initial data
     const insert = db.prepare('INSERT INTO bookings (time, availability) VALUES (?, ?)');
 
-    const seedData = [
+    const seedData: [string, boolean][] = [
         ['09:00 AM', true],
         ['10:00 AM', true],
         ['11:00 AM', false],
@@ -40,23 +37,37 @@ if (count.count === 0) {
     console.log('Database seeded with initial bookings');
 }
 
+export interface Booking {
+    id: number;
+    time: string;
+    availability: boolean;
+    idempotency_key: string | null;
+}
+
+export interface ReservationResult {
+    success: boolean;
+    message: string;
+    booking?: Booking;
+    statusCode: number;
+}
+
 // Database queries
-export const getAllBookings = () => {
-    const bookings = db.prepare('SELECT * FROM bookings ORDER BY id').all();
+export const getAllBookings = (): Booking[] => {
+    const bookings = db.prepare('SELECT * FROM bookings ORDER BY id').all() as any[];
     return bookings.map(b => ({ ...b, availability: Boolean(b.availability) }));
 };
 
-export const getBookingById = (id) => {
-    const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id);
+export const getBookingById = (id: number): Booking | undefined => {
+    const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as any;
     if (booking) {
         booking.availability = Boolean(booking.availability);
     }
     return booking;
 };
 
-export const reserveBooking = (id, idempotencyKey) => {
+export const reserveBooking = (id: number, idempotencyKey: string): ReservationResult => {
     // Check if this idempotency key has already been used
-    const existingBooking = db.prepare('SELECT * FROM bookings WHERE idempotency_key = ?').get(idempotencyKey);
+    const existingBooking = db.prepare('SELECT * FROM bookings WHERE idempotency_key = ?').get(idempotencyKey) as any;
 
     if (existingBooking) {
         // This idempotency key was already used
