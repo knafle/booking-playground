@@ -32,7 +32,20 @@ async function run() {
     const email = `test-${Date.now()}@example.com`;
     const password = 'password123';
 
-    console.log('1. Registering new user:', email);
+    // 1a. Attempt Register with invalid email
+    console.log('1a. Registering with invalid email...');
+    const invalidEmailRes = await request('POST', '/auth/register', { email: 'bad-email', password: 'password123' });
+    console.log(`   Status: ${invalidEmailRes.status} ${invalidEmailRes.status === 400 ? 'Passed' : 'Failed'}`);
+    if (invalidEmailRes.status === 400) console.log('   Message:', invalidEmailRes.data.message);
+
+    // 1b. Attempt Register with short password
+    console.log('\n1b. Registering with short password...');
+    const shortPasswordRes = await request('POST', '/auth/register', { email: `test-${Date.now()}@example.com`, password: '123' });
+    console.log(`   Status: ${shortPasswordRes.status} ${shortPasswordRes.status === 400 ? 'Passed' : 'Failed'}`);
+    if (shortPasswordRes.status === 400) console.log('   Message:', shortPasswordRes.data.message);
+
+    // 1c. Register valid user
+    console.log('\n1c. Registering new user:', email);
     const reg = await request('POST', '/auth/register', { email, password });
     console.log('   Status:', reg.status, reg.data);
 
@@ -57,6 +70,9 @@ async function run() {
     // Get a booking
     const bookingsRes = await fetch('http://localhost:3001/api/bookings');
     const bookingsData = await bookingsRes.json();
+    if (bookingsData.bookings.length > 0) {
+        console.log('   Sample booking:', bookingsData.bookings[0]);
+    }
     const availableBooking = bookingsData.bookings.find(b => b.availability);
 
     if (availableBooking) {

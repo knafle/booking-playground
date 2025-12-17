@@ -12,6 +12,18 @@ export default function Login() {
         e.preventDefault();
         setError(null);
 
+        // Validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError('Invalid email format');
+            return;
+        }
+
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters long');
+            return;
+        }
+
         const action = isLogin ? login : register;
         const result = await action(email, password);
 

@@ -1,19 +1,24 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import Database from 'better-sqlite3';
 import { join } from 'path';
+import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
 const dbPath = join(process.cwd(), 'bookings.db');
 const db = new Database(dbPath);
 
 // Register
-router.post('/register', async (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).json({ success: false, message: 'Email and password are required' });
+router.post('/register', [
+    body('email').isEmail().withMessage('Invalid email format'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
+], async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ success: false, message: errors.array()[0].msg });
     }
+
+    const { email, password } = req.body;
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -33,12 +38,16 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).json({ success: false, message: 'Email and password are required' });
+router.post('/login', [
+    body('email').isEmail().withMessage('Invalid email format'),
+    body('password').exists().withMessage('Password is required')
+], async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ success: false, message: errors.array()[0].msg });
     }
+
+    const { email, password } = req.body;
 
     try {
         const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;

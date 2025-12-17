@@ -1,6 +1,6 @@
 import './BookingItem.css'
 
-function BookingItem({ booking, isLoading, error, onReserve }) {
+function BookingItem({ booking, isLoading, error, onReserve, user }) {
     if (isLoading) {
         return (
             <div className="booking-item loading">
@@ -17,19 +17,29 @@ function BookingItem({ booking, isLoading, error, onReserve }) {
         )
     }
 
+    const isMyBooking = !booking.availability && user && booking.user_id === user.id;
+
     return (
-        <div className={`booking-item ${booking.availability ? 'available' : 'unavailable'}`}>
+        <div className={`booking-item ${booking.availability ? 'available' : isMyBooking ? 'my-booking' : 'unavailable'}`}>
             <span className="booking-time">{booking.time}</span>
             <div className="booking-actions">
                 {booking.availability ? (
-                    <button
-                        className="reserve-btn"
-                        onClick={() => onReserve(booking.id)}
-                    >
-                        Reserve
-                    </button>
+                    user ? (
+                        <button
+                            className="reserve-btn"
+                            onClick={() => onReserve(booking.id)}
+                        >
+                            Reserve
+                        </button>
+                    ) : (
+                        <span className="guest-notice">Log in to reserve</span>
+                    )
                 ) : (
-                    <span className="booking-status">🔒 Booked</span>
+                    isMyBooking ? (
+                        <span className="booking-status owner">✅ Reserved by you</span>
+                    ) : (
+                        <span className="booking-status">🔒 Booked</span>
+                    )
                 )}
             </div>
         </div>

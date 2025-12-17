@@ -155,32 +155,40 @@ function BookingApp() {
 
     return (
         <div className="App">
-            <h1>Booking Playground</h1>
-
-            <Login />
-
-            <div className="status">
-                <h2>Backend Status</h2>
-                {isLoading && <p className="loading">⏳ Checking backend...</p>}
-                {error && <p className="error">❌ Failed: {error}</p>}
-                {healthData?.ok && <p className="success">✅ Backend is healthy!</p>}
-            </div>
-
-            <div className="bookings-section">
-                <h2>Available Bookings</h2>
-                <div className="bookings-list">
-                    {bookingsLoading && <BookingItem isLoading={true} />}
-                    {bookingsError && <BookingItem error={bookingsError} />}
-                    {!bookingsLoading && !bookingsError && bookings.map(booking => (
-                        <BookingItem
-                            key={booking.id}
-                            booking={booking}
-                            onReserve={reserveBooking}
-                            disabled={!user} // Validation purely visual, check is in handler too
-                        />
-                    ))}
+            <header className="app-header">
+                <h1>Booking Playground</h1>
+                <div className="auth-container">
+                    <Login />
                 </div>
-            </div>
+            </header>
+
+            <main className="app-main">
+                <div className="bookings-section">
+                    <h2>Available Bookings</h2>
+                    <div className="bookings-list">
+                        {bookingsLoading && <BookingItem isLoading={true} />}
+                        {bookingsError && <BookingItem error={bookingsError} />}
+                        {!bookingsLoading && !bookingsError && bookings.map(booking => (
+                            <BookingItem
+                                key={booking.id}
+                                booking={booking}
+                                user={user}
+                                onReserve={reserveBooking}
+                                disabled={!user} // Keep visually disabled just in case, or remove if handling inside
+                            />
+                        ))}
+                    </div>
+                </div>
+            </main>
+
+            <footer className="app-footer">
+                <div className="status-indicator">
+                    <span>Backend Status: </span>
+                    {isLoading && <span className="loading">⏳ Checking...</span>}
+                    {error && <span className="error">❌ {error}</span>}
+                    {healthData?.ok && <span className="success">✅ Online</span>}
+                </div>
+            </footer>
         </div>
     )
 }

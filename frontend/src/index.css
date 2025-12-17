@@ -28,6 +28,40 @@ body {
     text-align: center;
 }
 
+.app-main {
+    flex: 1;
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 60px;
+    /* Space for fixed footer */
+}
+
+.app-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 0.5rem 2rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    text-align: left;
+    /* Added as per instruction */
+}
+
+.status-indicator {
+    display: flex;
+    justify-content: flex-start;
+    /* Anchor left */
+    align-items: center;
+    gap: 1rem;
+}
+
 @media (prefers-color-scheme: light) {
     :root {
         color: #213547;
