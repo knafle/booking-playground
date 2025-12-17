@@ -1,0 +1,26 @@
+[
+    {
+        "time": "09:00 AM",
+        "availability": true
+    },
+    {
+        "time": "10:00 AM",
+        "availability": true
+    },
+    {
+        "time": "11:00 AM",
+        "availability": false
+    },
+    {
+        "time": "01:00 PM",
+        "availability": true
+    },
+    {
+        "time": "02:00 PM",
+        "availability": false
+    },
+    {
+        "time": "03:00 PM",
+        "availability": true
+    }
+]

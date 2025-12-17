@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import BookingItem from './BookingItem'
+import { AuthProvider, useAuth } from './AuthContext'
+import Login from './Login'
 
-function App() {
+function BookingApp() {
+    const { user } = useAuth();
     const [healthData, setHealthData] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -84,6 +87,11 @@ function App() {
     }
 
     const reserveBooking = (id) => {
+        if (!user) {
+            alert('Please login first');
+            return;
+        }
+
         // Optimistic Update
         const previousBookings = [...bookings];
 
@@ -105,11 +113,8 @@ function App() {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include', // Important for cookies!
             body: JSON.stringify({
-                id, // Keeping ID in body is redundant but harmless, but strictly we can remove it if backend ignores it.
-                // However, backend extraction changed to params.
-                // Let's send just the key as per new route requirements?
-                // The backend only extracts { idempotencyKey } from body.
                 idempotencyKey: key
             }),
         })
@@ -120,6 +125,8 @@ function App() {
                     throw new Error(data.message || 'Failed to reserve');
                 }
                 // Success - state is already updated, nothing to do
+                // Force refresh to get latest state (e.g. user_id update if we displayed it)
+                fetchBookings();
             })
             .catch(err => {
                 // Revert on network error or server failure
@@ -150,6 +157,8 @@ function App() {
         <div className="App">
             <h1>Booking Playground</h1>
 
+            <Login />
+
             <div className="status">
                 <h2>Backend Status</h2>
                 {isLoading && <p className="loading">⏳ Checking backend...</p>}
@@ -167,11 +176,20 @@ function App() {
                             key={booking.id}
                             booking={booking}
                             onReserve={reserveBooking}
+                            disabled={!user} // Validation purely visual, check is in handler too
                         />
                     ))}
                 </div>
             </div>
         </div>
+    )
+}
+
+function App() {
+    return (
+        <AuthProvider>
+            <BookingApp />
+        </AuthProvider>
     )
 }
 

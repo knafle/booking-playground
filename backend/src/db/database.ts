@@ -4,38 +4,9 @@ import { join } from 'path';
 const dbPath = join(process.cwd(), 'bookings.db');
 const db = new Database(dbPath);
 
-// Create bookings table with idempotency_key column
-db.exec(`
-  CREATE TABLE IF NOT EXISTS bookings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    time TEXT NOT NULL UNIQUE,
-    availability BOOLEAN NOT NULL DEFAULT 1,
-    idempotency_key TEXT UNIQUE
-  )
-`);
-
-// Check if we need to seed data
-const count = db.prepare('SELECT COUNT(*) as count FROM bookings').get() as { count: number };
-
-if (count.count === 0) {
-    // Seed initial data
-    const insert = db.prepare('INSERT INTO bookings (time, availability) VALUES (?, ?)');
-
-    const seedData: [string, boolean][] = [
-        ['09:00 AM', true],
-        ['10:00 AM', true],
-        ['11:00 AM', false],
-        ['01:00 PM', true],
-        ['02:00 PM', false],
-        ['03:00 PM', true],
-    ];
-
-    for (const [time, availability] of seedData) {
-        insert.run(time, availability ? 1 : 0);
-    }
-
-    console.log('Database seeded with initial bookings');
-}
+// Initialize database
+import { migrate } from './migrate';
+migrate();
 
 export interface Booking {
     id: number;
