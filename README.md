@@ -2,6 +2,16 @@
 
 A minimal monorepo setup with Vite+React frontend and Node+Express+TypeScript backend. Now features user authentication, persistent sessions, and protected booking actions.
 
+## Features
+
+- **Authentication**: User registration and login using email/password (bcrypt hashed).
+- **Sessions**: Persistent session management using SQLite (`connect-sqlite3`).
+- **Protected Bookings**: Only authenticated users can reserve bookings.
+- **Input Validation**: Backend and frontend validation for email format and password length.
+- **Ownership Tracking**: Users can identify bookings they reserved ("Reserved by you").
+- **UI Improvements**: Responsive layout with header (login) and footer (status).
+- **Testing**: Comprehensive backend integration tests and frontend optimistic UI rollback tests.
+- **CI/CD**: Automated test execution via GitHub Actions on every push/PR.
 
 ## Project Structure
 
@@ -91,6 +101,28 @@ Frontend will run on `http://localhost:5173`.
 - **bcrypt** - Password hashing
 - **express-validator** - Input validation
 - **CORS** - Cross-origin resource sharing
+
+## Testing
+
+### Backend Tests
+Integration tests for the backend verify idempotency, race condition handling, and double booking prevention. Tests are independent and restore state before each run.
+
+```bash
+cd backend
+npm test
+```
+
+### Frontend Tests
+Frontend tests verify the optimistic UI behavior and rollback mechanism.
+
+```bash
+cd frontend
+npm test
+```
+
+## CI/CD
+
+This project uses **GitHub Actions** to automatically run the full test suite when changes are pushed to `main` or `master` branches. The configuration can be found in `.github/workflows/test.yml`.
 
 ## Verification
 
