@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { join } from 'path';
 import fs from 'fs';
 
-const dbPath = join(process.cwd(), 'bookings.db');
+const dbPath = join(process.cwd(), process.env.DB_PATH || 'bookings.db');
 const db = new Database(dbPath);
 
 export const migrate = () => {

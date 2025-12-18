@@ -5,7 +5,7 @@ import { join } from 'path';
 import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
-const dbPath = join(process.cwd(), 'bookings.db');
+const dbPath = join(process.cwd(), process.env.DB_PATH || 'bookings.db');
 const db = new Database(dbPath);
 
 // Register

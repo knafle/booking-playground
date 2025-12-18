@@ -2,14 +2,6 @@
 
 A minimal monorepo setup with Vite+React frontend and Node+Express+TypeScript backend. Now features user authentication, persistent sessions, and protected booking actions.
 
-## Features
-
-- **Authentication**: User registration and login using email/password (bcrypt hashed).
-- **Sessions**: Persistent session management using SQLite (`connect-sqlite3`).
-- **Protected Bookings**: Only authenticated users can reserve bookings.
-- **Input Validation**: Backend and frontend validation for email format and password length.
-- **Ownership Tracking**: Users can identify bookings they reserved ("Reserved by you").
-- **UI Improvements**: Responsive layout with header (login) and footer (status).
 
 ## Project Structure
 

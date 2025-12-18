@@ -4,7 +4,7 @@ import { join } from 'path';
 import { requireAuth } from '../middleware/auth';
 
 const router = express.Router();
-const dbPath = join(process.cwd(), 'bookings.db');
+const dbPath = join(process.cwd(), process.env.DB_PATH || 'bookings.db');
 const db = new Database(dbPath);
 
 // Get all bookings
@@ -37,10 +37,10 @@ router.post('/:id/reserve', requireAuth, (req, res) => {
         const update = db.prepare(`
             UPDATE bookings 
             SET availability = 0, idempotency_key = ?, user_id = ?
-            WHERE id = ? AND (availability = 1 OR idempotency_key = ?)
+            WHERE id = ? AND availability = 1
         `);
 
-        const result = update.run(idempotencyKey, userId, id, idempotencyKey);
+        const result = update.run(idempotencyKey, userId, id);
 
         if (result.changes > 0) {
             res.json({ success: true, message: 'Booking reserved' });
