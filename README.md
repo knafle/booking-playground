@@ -9,8 +9,9 @@ A minimal monorepo setup with Vite+React frontend and Node+Express+TypeScript ba
 - **Protected Bookings**: Only authenticated users can reserve bookings.
 - **Input Validation**: Backend and frontend validation for email format and password length.
 - **Ownership Tracking**: Users can identify bookings they reserved ("Reserved by you").
-- **UI Improvements**: Responsive layout with header (login) and footer (status).
-- **Testing**: Comprehensive backend integration tests and frontend optimistic UI rollback tests.
+- **Cancellation**: Authenticated users can cancel their own reservations with idempotency support.
+- **UI Improvements**: Responsive layout with header (login), footer (status), and action buttons.
+- **Testing**: Atomic backend integration tests (reservation, cancellation, race conditions) and frontend optimistic UI tests.
 - **CI/CD**: Automated test execution via GitHub Actions on every push/PR.
 
 ## Project Structure
@@ -84,6 +85,8 @@ Frontend will run on `http://localhost:5173`.
 - `GET /api/bookings` - Get all bookings (includes `user_id` if reserved)
 - `POST /api/bookings/:id/reserve` - Reserve a specific booking slot **(Requires Auth)**
   - Body: `{ "idempotencyKey": "uuid-string" }`
+- `POST /api/bookings/:id/cancel` - Cancel a specific reservation **(Requires Owner Auth)**
+  - Body: `{ "idempotencyKey": "uuid-string" }`
 
 ## Tech Stack
 
@@ -105,7 +108,7 @@ Frontend will run on `http://localhost:5173`.
 ## Testing
 
 ### Backend Tests
-Integration tests for the backend verify idempotency, race condition handling, and double booking prevention. Tests are independent and restore state before each run.
+Integration tests for the backend verify idempotency, race condition handling, double booking prevention, and ownership-based cancellation. Tests are atomic, independent, and restore state before each run.
 
 ```bash
 cd backend

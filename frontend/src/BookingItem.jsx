@@ -1,6 +1,6 @@
 import './BookingItem.css'
 
-function BookingItem({ booking, isLoading, error, onReserve, user }) {
+function BookingItem({ booking, isLoading, error, onReserve, onCancel, user }) {
     if (isLoading) {
         return (
             <div className="booking-item loading">
@@ -36,7 +36,15 @@ function BookingItem({ booking, isLoading, error, onReserve, user }) {
                     )
                 ) : (
                     isMyBooking ? (
-                        <span className="booking-status owner">✅ Reserved by you</span>
+                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                            <span className="booking-status owner">✅ Reserved by you</span>
+                            <button
+                                className="cancel-btn"
+                                onClick={() => onCancel(booking.id)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     ) : (
                         <span className="booking-status">🔒 Booked</span>
                     )

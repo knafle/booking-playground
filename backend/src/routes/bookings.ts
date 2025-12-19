@@ -63,4 +63,61 @@ router.post('/:id/reserve', requireAuth, (req, res) => {
     }
 });
 
+// Cancel a reservation
+router.post('/:id/cancel', requireAuth, (req, res) => {
+    const id = parseInt(req.params.id);
+    const { idempotencyKey } = req.body;
+    const userId = req.session.userId;
+
+    if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid booking ID' });
+    }
+
+    if (!idempotencyKey || typeof idempotencyKey !== 'string' || idempotencyKey.trim() === '') {
+        return res.status(400).json({ success: false, message: 'Idempotency key is required' });
+    }
+
+    try {
+        // Find the booking first to check ownership and current idempotency key
+        const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as any;
+
+        if (!booking) {
+            return res.status(404).json({ success: false, message: 'Booking not found' });
+        }
+
+        // Idempotency check: if the key matches AND it's already available, it's a successful "no-op"
+        if (booking.idempotency_key === idempotencyKey && booking.availability === 1) {
+            return res.json({ success: true, message: 'Reservation already cancelled' });
+        }
+
+        // Ownership check
+        if (booking.user_id !== userId) {
+            return res.status(403).json({ success: false, message: 'You do not own this reservation' });
+        }
+
+        // Perform the cancellation
+        const update = db.prepare(`
+            UPDATE bookings 
+            SET availability = 1, idempotency_key = ?, user_id = NULL
+            WHERE id = ? AND user_id = ? AND availability = 0
+        `);
+
+        const result = update.run(idempotencyKey, id, userId);
+
+        if (result.changes > 0) {
+            res.json({ success: true, message: 'Reservation cancelled' });
+        } else {
+            // Re-check the state in case of race conditions
+            const currentBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as any;
+            if (currentBooking.idempotency_key === idempotencyKey && currentBooking.availability === 1) {
+                return res.json({ success: true, message: 'Reservation cancelled (idempotent)' });
+            }
+            res.status(400).json({ success: false, message: 'Could not cancel reservation' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
 export default router;

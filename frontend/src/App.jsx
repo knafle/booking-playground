@@ -33,7 +33,7 @@ function BookingApp() {
     }, [])
 
     const fetchBookings = () => {
-        // Only set loading on initial fetch to avoid flickering during polling
+        // Ensure initial load state is captured without flickering during polling
         if (bookings.length === 0) setBookingsLoading(true)
 
         fetch('http://localhost:3001/api/bookings')
@@ -54,10 +54,8 @@ function BookingApp() {
     }
 
     useEffect(() => {
-        // Initial fetch
         fetchBookings()
 
-        // Poll every 5 seconds
         const intervalId = setInterval(fetchBookings, 5000)
 
         // Refetch on window focus
@@ -75,6 +73,7 @@ function BookingApp() {
 
     // Store idempotency keys for each booking ID
     const idempotencyKeys = useRef(new Map());
+    const cancelIdempotencyKeys = useRef(new Map());
     const errorTimeoutRef = useRef(null);
 
     // Simple UUID v4 generator
@@ -86,6 +85,12 @@ function BookingApp() {
         });
     }
 
+    /**
+     * Handles the booking reservation process with an Optimistic UI update.
+     * 1. Updates local state immediately for responsiveness.
+     * 2. Uses an idempotency key to safely retry requests in case of network failure.
+     * 3. Reverts UI state locally if the backend fails or returns an error.
+     */
     const reserveBooking = (id) => {
         if (!user) {
             alert('Please login first');
@@ -100,7 +105,7 @@ function BookingApp() {
             b.id === id ? { ...b, availability: false } : b
         ));
 
-        // Get or generate idempotency key for this booking ID
+        // Idempotency: prevent double-booking on network retries
         let key = idempotencyKeys.current.get(id);
         if (!key) {
             key = generateUUID();
@@ -145,6 +150,53 @@ function BookingApp() {
             });
     }
 
+    const cancelReservation = (id) => {
+        if (!user) return;
+
+        const previousBookings = [...bookings];
+
+        // Optimistic Update: make slot available
+        setBookings(prev => prev.map(b =>
+            b.id === id ? { ...b, availability: true, user_id: null } : b
+        ));
+
+        let key = cancelIdempotencyKeys.current.get(id);
+        if (!key) {
+            key = generateUUID();
+            cancelIdempotencyKeys.current.set(id, key);
+        }
+
+        fetch(`http://localhost:3001/api/bookings/${id}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                idempotencyKey: key
+            }),
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to cancel');
+                }
+                fetchBookings();
+            })
+            .catch(err => {
+                setBookings(previousBookings);
+                setBookingsError(`Failed to cancel: ${err.message}`);
+
+                if (errorTimeoutRef.current) {
+                    clearTimeout(errorTimeoutRef.current);
+                }
+                errorTimeoutRef.current = setTimeout(() => {
+                    setBookingsError(null);
+                    errorTimeoutRef.current = null;
+                }, 3000);
+            });
+    }
+
     useEffect(() => {
         return () => {
             if (errorTimeoutRef.current) {
@@ -174,7 +226,8 @@ function BookingApp() {
                                 booking={booking}
                                 user={user}
                                 onReserve={reserveBooking}
-                                disabled={!user} // Keep visually disabled just in case, or remove if handling inside
+                                onCancel={cancelReservation}
+                                disabled={!user}
                             />
                         ))}
                     </div>

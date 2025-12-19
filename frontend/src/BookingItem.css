@@ -70,6 +70,23 @@
     cursor: not-allowed;
 }
 
+.cancel-btn {
+    padding: 0.25rem 0.75rem;
+    background: transparent;
+    color: #ff6b6b;
+    border: 1px solid #ff6b6b;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+    background: #ff6b6b;
+    color: white;
+}
+
 .reservation-feedback {
     position: absolute;
     right: 1rem;

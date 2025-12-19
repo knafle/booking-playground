@@ -12,7 +12,7 @@ export default function Login() {
         e.preventDefault();
         setError(null);
 
-        // Validation
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             setError('Invalid email format');
@@ -30,7 +30,6 @@ export default function Login() {
         if (!result.success) {
             setError(result.message);
         } else {
-            // clear form
             setEmail('');
             setPassword('');
         }
@@ -38,47 +37,43 @@ export default function Login() {
 
     if (user) {
         return (
-            <div className="auth-status">
-                <p>Welcome, {user.email} (ID: {user.id})</p>
-                <button onClick={logout}>Logout</button>
+            <div className="auth-status" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '0.9rem' }}>{user.email}</span>
+                <button onClick={logout} style={{ padding: '4px 8px', fontSize: '0.8rem' }}>Logout</button>
             </div>
         );
     }
 
     return (
-        <div className="login-form">
-            <h3>{isLogin ? 'Login' : 'Register'}</h3>
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '10px' }}>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        required
-                        style={{ padding: '8px', marginRight: '5px' }}
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        required
-                        style={{ padding: '8px' }}
-                    />
-                </div>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
-            </form>
-            <p style={{ fontSize: '0.9em' }}>
-                {isLogin ? "Don't have an account? " : "Already have an account? "}
-                <button
-                    onClick={() => { setIsLogin(!isLogin); setError(null); }}
-                    style={{ background: 'none', border: 'none', color: 'blue', textDecoration: 'underline', cursor: 'pointer' }}
-                >
-                    {isLogin ? 'Register' : 'Login'}
+        <div className="login-form" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    style={{ padding: '4px 8px', fontSize: '0.8rem', width: '120px' }}
+                />
+                <input
+                    type="password"
+                    placeholder="Pass"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    style={{ padding: '4px 8px', fontSize: '0.8rem', width: '80px' }}
+                />
+                <button type="submit" style={{ padding: '4px 8px', fontSize: '0.8rem' }}>
+                    {isLogin ? 'Login' : 'Reg'}
                 </button>
-            </p>
+            </form>
+            {error && <span style={{ color: 'red', fontSize: '0.7rem', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={error}>{error}</span>}
+            <button
+                onClick={() => { setIsLogin(!isLogin); setError(null); }}
+                style={{ background: 'none', border: 'none', color: 'blue', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.8rem' }}
+            >
+                {isLogin ? 'Register?' : 'Login?'}
+            </button>
         </div>
     );
 }

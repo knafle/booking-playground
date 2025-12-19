@@ -154,4 +154,86 @@ describe('Reservation Integration Tests', () => {
         expect(res.body.success).toBe(true);
         expect(res.body.message).toBe('Booking already reserved by you');
     });
+
+    describe('Cancellation tests', () => {
+        it('should allow a user to cancel their own reservation', async () => {
+            const email = 'cancel_success@example.com';
+            await registerUser(email);
+            const agent = await loginUser(email);
+
+            // Reserve first
+            await agent.post('/api/bookings/7/reserve').send({ idempotencyKey: 'res_key_7' });
+
+            // Cancel
+            const res = await agent
+                .post('/api/bookings/7/cancel')
+                .send({ idempotencyKey: 'cancel_key_7' });
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body.message).toBe('Reservation cancelled');
+
+            const booking = db.prepare('SELECT * FROM bookings WHERE id = 7').get() as any;
+            expect(booking.availability).toBe(1);
+            expect(booking.user_id).toBeNull();
+        });
+
+        it('should be idempotent (multiple cancel requests with same key)', async () => {
+            const email = 'cancel_idemp@example.com';
+            await registerUser(email);
+            const agent = await loginUser(email);
+
+            await agent.post('/api/bookings/8/reserve').send({ idempotencyKey: 'res_key_8' });
+
+            // First cancel
+            await agent.post('/api/bookings/8/cancel').send({ idempotencyKey: 'cancel_idemp_8' });
+
+            // Second cancel with same key
+            const res = await agent.post('/api/bookings/8/cancel').send({ idempotencyKey: 'cancel_idemp_8' });
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body.message).toBe('Reservation already cancelled');
+        });
+
+        it('should not allow a user to cancel someone else reservation', async () => {
+            const ownerEmail = 'owner@example.com';
+            const hackerEmail = 'hacker@example.com';
+
+            await registerUser(ownerEmail);
+            await registerUser(hackerEmail);
+
+            const ownerAgent = await loginUser(ownerEmail);
+            const hackerAgent = await loginUser(hackerEmail);
+
+            // Owner reserves
+            await ownerAgent.post('/api/bookings/9/reserve').send({ idempotencyKey: 'res_key_9' });
+
+            // Hacker tries to cancel
+            const res = await hackerAgent
+                .post('/api/bookings/9/cancel')
+                .send({ idempotencyKey: 'hacker_key_9' });
+
+            expect(res.status).toBe(403);
+            expect(res.body.success).toBe(false);
+            expect(res.body.message).toBe('You do not own this reservation');
+
+            const booking = db.prepare('SELECT * FROM bookings WHERE id = 9').get() as any;
+            expect(booking.availability).toBe(0); // Still reserved
+        });
+
+        it('should return 404 for cancelling a non-existent booking', async () => {
+            const email = 'test_404@example.com';
+            await registerUser(email);
+            const agent = await loginUser(email);
+
+            const res = await agent
+                .post('/api/bookings/999/cancel')
+                .send({ idempotencyKey: 'key_999' });
+
+            expect(res.status).toBe(404);
+            expect(res.body.success).toBe(false);
+            expect(res.body.message).toBe('Booking not found');
+        });
+    });
 });
