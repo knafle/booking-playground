@@ -43,6 +43,8 @@ router.post('/:id/reserve', requireAuth, (req, res) => {
         const result = update.run(idempotencyKey, userId, id);
 
         if (result.changes > 0) {
+            const io = req.app.get('io');
+            if (io) io.emit('booking_reserved', { id });
             res.json({ success: true, message: 'Booking reserved' });
         } else {
             // Check if it was already taken by someone else or just idempotency match
@@ -105,6 +107,8 @@ router.post('/:id/cancel', requireAuth, (req, res) => {
         const result = update.run(idempotencyKey, id, userId);
 
         if (result.changes > 0) {
+            const io = req.app.get('io');
+            if (io) io.emit('booking_canceled', { id });
             res.json({ success: true, message: 'Reservation cancelled' });
         } else {
             // Re-check the state in case of race conditions

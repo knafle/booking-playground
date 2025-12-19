@@ -13,6 +13,8 @@ A minimal monorepo setup with Vite+React frontend and Node+Express+TypeScript ba
 - **UI Improvements**: Responsive layout with header (login), footer (status), and action buttons.
 - **Testing**: Atomic backend integration tests (reservation, cancellation, race conditions) and frontend optimistic UI tests.
 - **CI/CD**: Automated test execution via GitHub Actions on every push/PR.
+- **Real-time Updates**: Instant synchronization across clients using **Socket.IO**.
+- **Resilient Connectivity**: Custom fallback to 30s polling when the WebSocket connection is lost.
 
 ## Project Structure
 
@@ -87,6 +89,9 @@ Frontend will run on `http://localhost:5173`.
   - Body: `{ "idempotencyKey": "uuid-string" }`
 - `POST /api/bookings/:id/cancel` - Cancel a specific reservation **(Requires Owner Auth)**
   - Body: `{ "idempotencyKey": "uuid-string" }`
+- **Real-time Synchronization** (WebSocket):
+  - Emits `booking_reserved` on successful reservation.
+  - Emits `booking_canceled` on successful cancellation.
 
 ## Tech Stack
 
@@ -102,8 +107,9 @@ Frontend will run on `http://localhost:5173`.
 - **better-sqlite3** - SQLite database driver
 - **express-session** & **connect-sqlite3** - Session storage
 - **bcrypt** - Password hashing
-- **express-validator** - Input validation
-- **CORS** - Cross-origin resource sharing
+- **express-validator**: Input validation
+- **CORS**: Cross-origin resource sharing
+- **Socket.IO**: Real-time bidirectional event-based communication
 
 ## Testing
 

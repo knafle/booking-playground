@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
+import { io } from 'socket.io-client'
 import './App.css'
 import BookingItem from './BookingItem'
 import { AuthProvider, useAuth } from './AuthContext'
 import Login from './Login'
-
 function BookingApp() {
     const { user } = useAuth();
     const [healthData, setHealthData] = useState(null)
@@ -13,6 +13,9 @@ function BookingApp() {
     const [bookings, setBookings] = useState([])
     const [bookingsLoading, setBookingsLoading] = useState(true)
     const [bookingsError, setBookingsError] = useState(null)
+    const [isSocketConnected, setIsSocketConnected] = useState(false)
+
+    const socketRef = useRef(null)
 
     useEffect(() => {
         fetch('http://localhost:3001/health')
@@ -53,23 +56,72 @@ function BookingApp() {
             })
     }
 
+    // Socket.IO Setup
+    useEffect(() => {
+        const socket = io('http://localhost:3001', {
+            withCredentials: true
+        });
+        socketRef.current = socket;
+
+        socket.on('connect', () => {
+            console.log('Connected to socket');
+            setIsSocketConnected(true);
+            fetchBookings(); // Fetch once on connect to ensure sync
+        });
+
+        socket.on('booking_reserved', () => {
+            console.log('Real-time: Booking reserved');
+            fetchBookings();
+        });
+
+        socket.on('booking_canceled', () => {
+            console.log('Real-time: Booking canceled');
+            fetchBookings();
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from socket');
+            setIsSocketConnected(false);
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
+
+    // Initial fetch and focus listeners
     useEffect(() => {
         fetchBookings()
-
-        const intervalId = setInterval(fetchBookings, 5000)
 
         // Refetch on window focus
         const onFocus = () => fetchBookings()
         window.addEventListener('focus', onFocus)
-        window.addEventListener('visibilitychange', () => {
+        const onVisibilityChange = () => {
             if (document.visibilityState === 'visible') fetchBookings()
-        })
+        }
+        window.addEventListener('visibilitychange', onVisibilityChange)
 
         return () => {
-            clearInterval(intervalId)
             window.removeEventListener('focus', onFocus)
+            window.removeEventListener('visibilitychange', onVisibilityChange)
         }
     }, [])
+
+    // Fallback Polling (30 seconds) - only when socket is disconnected
+    useEffect(() => {
+        let intervalId;
+        if (!isSocketConnected) {
+            console.log('Socket disconnected, starting 30s polling fallback');
+            intervalId = setInterval(fetchBookings, 30000);
+        }
+
+        return () => {
+            if (intervalId) {
+                console.log('Clearing polling fallback');
+                clearInterval(intervalId);
+            }
+        };
+    }, [isSocketConnected]);
 
     // Store idempotency keys for each booking ID
     const idempotencyKeys = useRef(new Map());
@@ -150,6 +202,12 @@ function BookingApp() {
             });
     }
 
+    /**
+     * Handles the cancellation of a reservation with an Optimistic UI update.
+     * 1. Updates local state immediately for responsiveness.
+     * 2. Uses an idempotency key to safely handle retries and race conditions.
+     * 3. Reverts UI state locally if the backend fails or returns an error.
+     */
     const cancelReservation = (id) => {
         if (!user) return;
 
