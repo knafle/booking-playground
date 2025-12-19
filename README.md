@@ -121,6 +121,12 @@ cd backend
 npm test
 ```
 
+#### Run Coverage
+```bash
+npm run test:coverage
+```
+Reports are generated in the `backend/coverage` directory.
+
 ### Frontend Tests
 Frontend tests verify the optimistic UI behavior and rollback mechanism.
 
@@ -128,6 +134,12 @@ Frontend tests verify the optimistic UI behavior and rollback mechanism.
 cd frontend
 npm test
 ```
+
+#### Run Coverage
+```bash
+npm run test:coverage
+```
+Reports are generated in the `frontend/coverage` directory.
 
 ## CI/CD
 

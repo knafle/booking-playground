@@ -22,3 +22,8 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Coverage
+coverage/
+node_modules/coverage/
+**/coverage/
