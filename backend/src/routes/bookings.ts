@@ -113,7 +113,7 @@ router.post('/:id/cancel', requireAuth, (req, res) => {
         } else {
             // Re-check the state in case of race conditions
             const currentBooking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as any;
-            if (currentBooking.idempotency_key === idempotencyKey && currentBooking.availability === 1) {
+            if (currentBooking && currentBooking.idempotency_key === idempotencyKey && currentBooking.availability === 1) {
                 return res.json({ success: true, message: 'Reservation cancelled (idempotent)' });
             }
             res.status(400).json({ success: false, message: 'Could not cancel reservation' });

@@ -162,18 +162,18 @@ describe('Reservation Integration Tests', () => {
             const agent = await loginUser(email);
 
             // Reserve first
-            await agent.post('/api/bookings/7/reserve').send({ idempotencyKey: 'res_key_7' });
+            await agent.post('/api/bookings/1/reserve').send({ idempotencyKey: 'res_key_1' });
 
             // Cancel
             const res = await agent
-                .post('/api/bookings/7/cancel')
-                .send({ idempotencyKey: 'cancel_key_7' });
+                .post('/api/bookings/1/cancel')
+                .send({ idempotencyKey: 'cancel_key_1' });
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
             expect(res.body.message).toBe('Reservation cancelled');
 
-            const booking = db.prepare('SELECT * FROM bookings WHERE id = 7').get() as any;
+            const booking = db.prepare('SELECT * FROM bookings WHERE id = 1').get() as any;
             expect(booking.availability).toBe(1);
             expect(booking.user_id).toBeNull();
         });
@@ -183,13 +183,13 @@ describe('Reservation Integration Tests', () => {
             await registerUser(email);
             const agent = await loginUser(email);
 
-            await agent.post('/api/bookings/8/reserve').send({ idempotencyKey: 'res_key_8' });
+            await agent.post('/api/bookings/2/reserve').send({ idempotencyKey: 'res_key_2' });
 
             // First cancel
-            await agent.post('/api/bookings/8/cancel').send({ idempotencyKey: 'cancel_idemp_8' });
+            await agent.post('/api/bookings/2/cancel').send({ idempotencyKey: 'cancel_idemp_2' });
 
             // Second cancel with same key
-            const res = await agent.post('/api/bookings/8/cancel').send({ idempotencyKey: 'cancel_idemp_8' });
+            const res = await agent.post('/api/bookings/2/cancel').send({ idempotencyKey: 'cancel_idemp_2' });
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
@@ -207,18 +207,18 @@ describe('Reservation Integration Tests', () => {
             const hackerAgent = await loginUser(hackerEmail);
 
             // Owner reserves
-            await ownerAgent.post('/api/bookings/9/reserve').send({ idempotencyKey: 'res_key_9' });
+            await ownerAgent.post('/api/bookings/3/reserve').send({ idempotencyKey: 'res_key_3' });
 
             // Hacker tries to cancel
             const res = await hackerAgent
-                .post('/api/bookings/9/cancel')
-                .send({ idempotencyKey: 'hacker_key_9' });
+                .post('/api/bookings/3/cancel')
+                .send({ idempotencyKey: 'hacker_key_3' });
 
             expect(res.status).toBe(403);
             expect(res.body.success).toBe(false);
             expect(res.body.message).toBe('You do not own this reservation');
 
-            const booking = db.prepare('SELECT * FROM bookings WHERE id = 9').get() as any;
+            const booking = db.prepare('SELECT * FROM bookings WHERE id = 3').get() as any;
             expect(booking.availability).toBe(0); // Still reserved
         });
 
